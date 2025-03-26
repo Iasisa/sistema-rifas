@@ -1,0 +1,64 @@
+/* src/frontend/src/App.css */
+/* Estos estilos complementan a Tailwind CSS */
+
+.number-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 5px;
+}
+
+.number-cell {
+  padding: 8px;
+  text-align: center;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.number-cell:hover {
+  background-color: #e6f7ff;
+  border-color: #1890ff;
+}
+
+.number-cell.selected {
+  background-color: #4299e1;
+  color: white;
+  border-color: #2b6cb0;
+}
+
+.number-cell.sold {
+  background-color: #e53e3e;
+  color: white;
+  cursor: not-allowed;
+  border-color: #c53030;
+}
+
+.number-cell.reserved {
+  background-color: #ed8936;
+  color: white;
+  cursor: not-allowed;
+  border-color: #dd6b20;
+}
+
+/* Estilos para impresión del boleto */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #ticket, #ticket * {
+    visibility: visible;
+  }
+
+  #ticket {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 15px;
+  }
+
+  #ticket button {
+    display: none;
+  }
+}
