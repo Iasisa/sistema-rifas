@@ -2,19 +2,30 @@
 import React, { useRef, useState, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
+import './TicketDisplay.css';
 
 const TicketDisplay = ({ ticketData, userData }) => {
   const ticketRef = useRef(null);
   const [isSending, setIsSending] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const [ticketStatus, setTicketStatus] = useState(null);
   
   // Fecha de emisión del boleto (actual)
-  const issueDate = new Date().toLocaleDateString();
+  const issueDate = new Date().toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
   
   // Fecha de vencimiento (48 horas después)
-  const validUntil = new Date(Date.now() + 48 * 60 * 60 * 1000).toLocaleDateString();
+  const validUntil = new Date(Date.now() + 48 * 60 * 60 * 1000).toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
   
   // Verificar el estado actual del boleto
   useEffect(() => {
@@ -33,7 +44,7 @@ const TicketDisplay = ({ ticketData, userData }) => {
     
     checkTicketStatus();
     
-    // Verificar cada 30 segundos si el estado cambió (por ejemplo, si fue marcado como pagado)
+    // Verificar cada 30 segundos si el estado cambió
     const intervalId = setInterval(checkTicketStatus, 30000);
     
     return () => clearInterval(intervalId);
@@ -88,18 +99,28 @@ const TicketDisplay = ({ ticketData, userData }) => {
     switch (ticketStatus) {
       case 'reserved':
         return (
-          <div className="mt-4 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded">
-            <p className="font-bold">Boleto Reservado</p>
-            <p>Tu boleto ha sido reservado exitosamente. Por favor, realiza el pago dentro de las próximas 48 horas.</p>
-            <p className="mt-2 text-sm">Se ha enviado un correo electrónico con los detalles de tu reserva a <strong>{userData.email}</strong>.</p>
+          <div className="status-message reserved">
+            <div className="status-icon">
+              <i className="status-clock"></i>
+            </div>
+            <div className="status-content">
+              <h3>Boleto Reservado</h3>
+              <p>Tu boleto ha sido reservado exitosamente. Por favor, realiza el pago dentro de las próximas 48 horas.</p>
+              <p className="status-detail">Se ha enviado un correo electrónico con los detalles de tu reserva.</p>
+            </div>
           </div>
         );
       case 'paid':
         return (
-          <div className="mt-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded">
-            <p className="font-bold">Boleto Pagado</p>
-            <p>¡Gracias por tu pago! Tu boleto ha sido confirmado y participará en el sorteo.</p>
-            <p className="mt-2 text-sm">Se ha enviado un correo electrónico de confirmación a <strong>{userData.email}</strong>.</p>
+          <div className="status-message paid">
+            <div className="status-icon">
+              <i className="status-check"></i>
+            </div>
+            <div className="status-content">
+              <h3>Boleto Pagado</h3>
+              <p>¡Gracias por tu pago! Tu boleto ha sido confirmado y participará en el sorteo.</p>
+              <p className="status-detail">Se ha enviado un correo electrónico de confirmación.</p>
+            </div>
           </div>
         );
       default:
@@ -107,83 +128,144 @@ const TicketDisplay = ({ ticketData, userData }) => {
     }
   };
 
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-      <div id="ticket" className="border-2 border-blue-500 p-6 rounded-lg mb-6">
-        <div ref={ticketRef}>
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-xl font-semibold">Boleto de Rifa #{ticketData.number}</h2>
-            <div className="text-right">
-              <p className="text-sm">Fecha de emisión: {issueDate}</p>
-              <p className="text-sm">Válido hasta: {validUntil} (48 hrs)</p>
-            </div>
-          </div>
-          
-          <div className="mb-4">
-            <h3 className="font-medium">Datos del participante:</h3>
-            <p>{userData.name}</p>
-            <p>{userData.email}</p>
-            <p>{userData.phone}</p>
-            {userData.city && <p>{userData.city}</p>}
-          </div>
-          
-          <div className="mb-4">
-            <h3 className="font-medium">Número(s) seleccionado(s):</h3>
-            <div className="flex flex-wrap gap-2 mt-1">
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">{ticketData.number}</span>
-            </div>
-          </div>
-          
-          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-            <h3 className="font-medium text-yellow-800">Instrucciones de pago:</h3>
-            <p className="text-sm mb-2">Para completar tu participación, realiza el pago en cualquier OXXO usando la siguiente referencia:</p>
-            <div className="bg-white p-3 border border-gray-300 text-center">
-              <p className="font-bold text-lg">Referencia: #{ticketData.number}</p>
-              <p className="text-sm">Monto a pagar: $100.00 MXN</p>
-            </div>
-            <p className="text-sm mt-2 text-red-600">IMPORTANTE: Tienes 48 horas para realizar el pago, de lo contrario tu número será liberado automáticamente.</p>
-          </div>
-          
-          {/* QR code could be added here */}
-          <div className="text-center border-t border-gray-200 pt-4 mt-4">
-            <p className="text-xs text-gray-500">
-              Este boleto es tu comprobante oficial de participación en la rifa. 
-              Conserva este boleto hasta el día del sorteo.
-            </p>
-          </div>
-        </div>
+  // Renderizar contador de tiempo restante
+  const renderCountdown = () => {
+    if (ticketStatus === 'paid') return null;
+    
+    return (
+      <div className="countdown-section">
+        <div className="countdown-title">Tiempo restante para pagar:</div>
+        <div className="countdown-timer">48:00:00</div>
+        <div className="countdown-subtitle">El boleto será liberado automáticamente si no se recibe el pago.</div>
       </div>
+    );
+  };
+
+  return (
+    <div className="ticket-container">
+      <h1 className="ticket-title">Tu Boleto Está Reservado</h1>
       
       {renderStatusMessage()}
       
-      <div className="flex flex-wrap justify-between gap-2">
-        <button 
-          className="bg-gray-200 px-4 py-2 rounded font-medium"
-          onClick={handlePrintTicket}
-        >
-          Imprimir boleto
-        </button>
-        <div className="space-x-2">
-          <button 
-            className={`bg-gray-200 px-4 py-2 rounded font-medium ${isDownloading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={handleDownloadTicket}
-            disabled={isDownloading}
-          >
-            {isDownloading ? 'Descargando...' : 'Descargar'}
-          </button>
-          <button 
-            className={`bg-blue-500 text-white px-4 py-2 rounded font-medium ${isSending || emailSent ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={handleSendEmail}
-            disabled={isSending || emailSent}
-          >
-            {isSending ? 'Enviando...' : emailSent ? 'Enviado' : 'Reenviar por correo'}
-          </button>
+      <div className="ticket-card" ref={ticketRef}>
+        <div className="ticket-header">
+          <div className="ticket-logo">
+            <span className="logo-text">Sistema de Rifas</span>
+          </div>
+          <div className="ticket-dates">
+            <div className="ticket-date">
+              <span className="date-label">Fecha de emisión:</span>
+              <span className="date-value">{issueDate}</span>
+            </div>
+            <div className="ticket-date">
+              <span className="date-label">Válido hasta:</span>
+              <span className="date-value">{validUntil}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="ticket-body">
+          <div className="ticket-number-section">
+            <span className="ticket-label">Número de Boleto:</span>
+            <span className="ticket-number">{ticketData?.number || ''}</span>
+          </div>
+          
+          <div className="ticket-user-section">
+            <h3>Datos del participante</h3>
+            <div className="user-details">
+              <div className="user-detail">
+                <span className="detail-label">Nombre:</span>
+                <span className="detail-value">{userData?.name || ''}</span>
+              </div>
+              <div className="user-detail">
+                <span className="detail-label">Email:</span>
+                <span className="detail-value">{userData?.email || ''}</span>
+              </div>
+              <div className="user-detail">
+                <span className="detail-label">Teléfono:</span>
+                <span className="detail-value">{userData?.phone || ''}</span>
+              </div>
+              {userData?.city && (
+                <div className="user-detail">
+                  <span className="detail-label">Ciudad:</span>
+                  <span className="detail-value">{userData.city}</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="ticket-payment-section">
+            <h3>Instrucciones de Pago</h3>
+            <div className="payment-reference">
+              <span className="payment-label">Referencia:</span>
+              <span className="payment-value">#{ticketData?.number || ''}</span>
+            </div>
+            <div className="payment-amount">
+              <span className="payment-label">Monto a pagar:</span>
+              <span className="payment-value">$100.00 MXN</span>
+            </div>
+            <div className="payment-instructions">
+              <p>Para completar tu participación, realiza el pago en cualquier OXXO usando la referencia proporcionada.</p>
+              <p className="payment-deadline">Tienes <strong>48 horas</strong> para realizar el pago.</p>
+            </div>
+          </div>
+          
+          {renderCountdown()}
+          
+          <div className="ticket-verification">
+            <div className="verification-code">
+              {/* Aquí se podría colocar un código QR en una implementación real */}
+              <div className="verification-qr-placeholder"></div>
+            </div>
+            <div className="verification-message">
+              Este boleto es tu comprobante oficial de participación en la rifa.
+              Conserva este boleto hasta el día del sorteo.
+            </div>
+          </div>
+        </div>
+        
+        <div className="ticket-footer">
+          <div className="footer-text">
+            <p>Sistema de Rifas | www.sistema-rifas.com | Sorteo: 15 de abril, 2025</p>
+          </div>
         </div>
       </div>
       
-      <div className="mt-6 text-center">
+      <div className="ticket-actions">
         <button 
-          className="bg-green-500 text-white px-6 py-2 rounded-full font-medium hover:bg-green-600 transition-colors"
+          className="action-button action-print"
+          onClick={handlePrintTicket}
+        >
+          <span className="button-icon print-icon"></span>
+          <span className="button-text">Imprimir boleto</span>
+        </button>
+        
+        <button 
+          className={`action-button action-download ${isDownloading ? 'is-loading' : ''}`}
+          onClick={handleDownloadTicket}
+          disabled={isDownloading}
+        >
+          <span className="button-icon download-icon"></span>
+          <span className="button-text">
+            {isDownloading ? 'Descargando...' : 'Descargar'}
+          </span>
+        </button>
+        
+        <button 
+          className={`action-button action-email ${isSending || emailSent ? 'is-disabled' : ''}`}
+          onClick={handleSendEmail}
+          disabled={isSending || emailSent}
+        >
+          <span className="button-icon email-icon"></span>
+          <span className="button-text">
+            {isSending ? 'Enviando...' : emailSent ? 'Enviado' : 'Enviar por correo'}
+          </span>
+        </button>
+      </div>
+      
+      <div className="return-home">
+        <button 
+          className="home-button"
           onClick={() => window.location.href = '/'}
         >
           Volver al inicio

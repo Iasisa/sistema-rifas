@@ -1,6 +1,7 @@
 // src/frontend/src/components/TicketSelection.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import './TicketSelection.css';
 
 const TicketSelection = ({ onTicketSelect }) => {
   const [availableTickets, setAvailableTickets] = useState([]);
@@ -10,30 +11,27 @@ const TicketSelection = ({ onTicketSelect }) => {
   const [searchNumber, setSearchNumber] = useState('');
   const [displayRange, setDisplayRange] = useState({ start: 0, end: 99 });
   const [statusFilter, setStatusFilter] = useState('all');
-  const [totalTickets, setTotalTickets] = useState(0);
 
   useEffect(() => {
     const fetchTickets = async () => {
       try {
         setLoading(true);
         
-        // Construir la URL con parámetros de paginación
-        let url;
-        if (statusFilter === 'all' || statusFilter === 'available') {
-          url = `http://localhost:3000/api/tickets/search?limit=100&offset=${displayRange.start}`;
-        } else {
-          url = `http://localhost:3000/api/tickets/search?status=${statusFilter}&limit=100&offset=${displayRange.start}`;
+        // Construir la URL con parámetros de paginación y filtro
+        let url = `http://localhost:3000/api/tickets/search?limit=100&offset=${displayRange.start}`;
+        
+        // Añadir filtro de estado si no es "todos"
+        if (statusFilter !== 'all') {
+          url += `&status=${statusFilter}`;
         }
         
         // Realizar la petición a la API
         const response = await axios.get(url);
         
-        setAvailableTickets(response.data.data);
-        // Si la respuesta incluye el total, actualizarlo
-        if (response.data.total) {
-          setTotalTickets(response.data.total);
-        }
+        // Si no hay respuesta de la API, utilizamos un array vacío
+        const ticketsData = response.data.data || [];
         
+        setAvailableTickets(ticketsData);
         setLoading(false);
       } catch (err) {
         console.error('Error al cargar boletos:', err);
@@ -46,29 +44,39 @@ const TicketSelection = ({ onTicketSelect }) => {
   }, [statusFilter, displayRange]);
 
   const handleSearch = async () => {
-    // Validar que sea un número de 4 dígitos
-    if (!searchNumber.match(/^\d{4}$/)) {
-      alert('Por favor ingresa un número de 4 dígitos');
+    // Validar que sea un número de 4 dígitos o menos
+    if (!searchNumber.match(/^\d{1,4}$/)) {
+      alert('Por favor ingresa un número entre 0 y 9999');
       return;
     }
 
     try {
       setLoading(true);
       
+      // Formatear el número para que tenga 4 dígitos
+      const formattedNumber = searchNumber.padStart(4, '0');
+      
       // Buscar el boleto específico en la API
-      const response = await axios.get(`http://localhost:3000/api/tickets/${searchNumber}`);
+      const response = await axios.get(`http://localhost:3000/api/tickets/${formattedNumber}`);
       
       if (response.data.success) {
         const ticket = response.data.data;
         
         if (ticket.Status !== 'available') {
-          alert(`Este boleto ya está ${ticket.Status === 'paid' ? 'vendido' : 'reservado'}`);
+          alert(`Este boleto ${ticket.Status === 'paid' ? 'ya está vendido' : 'está reservado por otro usuario (48 hrs)'}`);
           setLoading(false);
           return;
         }
         
         // Si está disponible, seleccionarlo
-        addToSelection(searchNumber);
+        addToSelection(formattedNumber);
+
+        // Navegar a la página correspondiente
+        const pageNumber = Math.floor(parseInt(formattedNumber) / 100);
+        setDisplayRange({
+          start: pageNumber * 100,
+          end: (pageNumber * 100) + 99
+        });
       } else {
         alert('No se encontró el boleto');
       }
@@ -95,6 +103,7 @@ const TicketSelection = ({ onTicketSelect }) => {
 
   const handleTicketClick = (ticket) => {
     if (ticket.Status !== 'available') {
+      alert(`Este número no está disponible. ${ticket.Status === 'paid' ? 'Ya ha sido vendido.' : 'Está reservado por otro usuario (48 hrs).'}`);
       return; // No se puede seleccionar
     }
     
@@ -125,141 +134,179 @@ const TicketSelection = ({ onTicketSelect }) => {
     }
   };
 
+  // Verifica si hay tickets disponibles para mostrar
+  const hasTicketsToShow = availableTickets && availableTickets.length > 0;
+
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-      <h2 className="text-xl font-semibold mb-4">Selecciona tus números</h2>
-      <p className="mb-4">Elige uno o más números del 0000 al 9999 para participar en nuestra rifa.</p>
+    <div className="ticket-selection-container">
+      <h1 className="ticket-selection-title">Selecciona tus números</h1>
+      <p className="ticket-selection-subtitle">Elige uno o más números del 0000 al 9999 para participar en nuestra rifa.</p>
       
       {/* Filtros y búsqueda */}
-      <div className="mb-4 flex flex-wrap gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Buscar número específico</label>
-          <input 
-            type="text" 
-            placeholder="Ej: 1234" 
-            className="mt-1 p-2 border rounded" 
-            maxLength="4"
-            value={searchNumber}
-            onChange={(e) => setSearchNumber(e.target.value)}
-          />
-          <button 
-            className="bg-blue-500 text-white px-3 py-2 rounded ml-2"
-            onClick={handleSearch}
-          >
-            Buscar
-          </button>
+      <div className="filters-container">
+        <div className="search-box">
+          <label className="filter-label">Buscar número específico</label>
+          <div className="search-input-container">
+            <input 
+              type="text" 
+              placeholder="Ej: 1234" 
+              className="search-input" 
+              maxLength="4"
+              value={searchNumber}
+              onChange={(e) => setSearchNumber(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            />
+            <button 
+              className="search-button"
+              onClick={handleSearch}
+            >
+              Buscar
+            </button>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Estado</label>
+        <div className="filter-box">
+          <label className="filter-label">Filtrar por estado</label>
           <select 
-            className="mt-1 p-2 border rounded"
+            className="filter-select"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">Todos</option>
-            <option value="available">Disponibles</option>
-            <option value="reserved">Reservados</option>
-            <option value="paid">Vendidos</option>
+            <option value="all">Mostrar todos</option>
+            <option value="available">Solo disponibles</option>
+            <option value="reserved">Solo reservados</option>
+            <option value="paid">Solo vendidos</option>
           </select>
         </div>
       </div>
       
       {/* Leyenda */}
-      <div className="mb-4 flex gap-4">
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-white border border-gray-300 mr-2"></div>
-          <span>Disponible</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-blue-500 mr-2"></div>
-          <span>Seleccionado</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-orange-500 mr-2"></div>
-          <span>Reservado (48 hrs)</span>
-        </div>
-        <div className="flex items-center">
-          <div className="w-4 h-4 bg-red-500 mr-2"></div>
-          <span>Vendido</span>
+      <div className="legend-container">
+        <h3 className="legend-title">Leyenda:</h3>
+        <div className="legend-items">
+          <div className="legend-item">
+            <div className="legend-color available"></div>
+            <span className="legend-label">Disponible</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color selected"></div>
+            <span className="legend-label">Seleccionado</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color reserved"></div>
+            <span className="legend-label">Reservado (48 hrs)</span>
+          </div>
+          <div className="legend-item">
+            <div className="legend-color sold"></div>
+            <span className="legend-label">Vendido</span>
+          </div>
         </div>
       </div>
       
       {/* Navegación de números */}
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <button 
-            className={`bg-gray-200 px-3 py-1 rounded ${displayRange.start === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={navigatePrevious} 
-            disabled={displayRange.start === 0}
-          >
-            ← Anterior
-          </button>
-          <span>Mostrando {displayRange.start.toString().padStart(4, '0')}-{displayRange.end.toString().padStart(4, '0')}</span>
-          <button 
-            className={`bg-gray-200 px-3 py-1 rounded ${displayRange.end >= 9999 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={navigateNext} 
-            disabled={displayRange.end >= 9999}
-          >
-            Siguiente →
-          </button>
+      <div className="navigation-container">
+        <button 
+          className="nav-button"
+          onClick={navigatePrevious} 
+          disabled={displayRange.start === 0}
+        >
+          ◀ Anterior
+        </button>
+        
+        <div className="nav-range">
+          Mostrando {displayRange.start.toString().padStart(4, '0')}-{displayRange.end.toString().padStart(4, '0')}
         </div>
         
-        {/* Grid de números */}
-        {loading ? (
-          <div className="text-center py-10">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mr-2"></div>
-            Cargando boletos...
-          </div>
-        ) : error ? (
-          <div className="text-center py-10 text-red-500">{error}</div>
-        ) : (
-          <div className="number-grid">
-            {availableTickets.map((ticket) => (
-              <div 
-                key={ticket.TicketNumber}
-                className={`number-cell ${
-                  ticket.Status === 'paid' ? 'sold' : 
-                  ticket.Status === 'reserved' ? 'reserved' : 
-                  selectedTickets.includes(ticket.TicketNumber) ? 'selected' : ''
-                }`}
-                onClick={() => handleTicketClick(ticket)}
-              >
-                {ticket.TicketNumber}
-              </div>
-            ))}
-          </div>
-        )}
+        <button 
+          className="nav-button"
+          onClick={navigateNext} 
+          disabled={displayRange.end >= 9999}
+        >
+          Siguiente ▶
+        </button>
       </div>
       
+      {/* Grid de números */}
+      {loading ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Cargando boletos...</p>
+        </div>
+      ) : error ? (
+        <div className="error-container">
+          <p>{error}</p>
+          <button 
+            className="retry-button"
+            onClick={() => window.location.reload()}
+          >
+            Reintentar
+          </button>
+        </div>
+      ) : !hasTicketsToShow ? (
+        <div className="empty-results">
+          <p>No hay boletos que coincidan con el filtro seleccionado.</p>
+        </div>
+      ) : (
+        <div className="number-grid">
+          {availableTickets.map((ticket) => (
+            <div 
+              key={ticket.TicketNumber}
+              className={`number-cell ${
+                ticket.Status === 'paid' ? 'sold' : 
+                ticket.Status === 'reserved' ? 'reserved' : 
+                selectedTickets.includes(ticket.TicketNumber) ? 'selected' : ''
+              }`}
+              onClick={() => handleTicketClick(ticket)}
+            >
+              {ticket.TicketNumber}
+            </div>
+          ))}
+        </div>
+      )}
+      
       {/* Números seleccionados */}
-      <div className="mb-4">
-        <h3 className="font-medium mb-2">Números seleccionados:</h3>
-        <div className="flex flex-wrap gap-2 p-2 border rounded bg-gray-50">
+      <div className="selected-numbers-container">
+        <h3 className="selected-numbers-title">Números seleccionados:</h3>
+        <div className="selected-numbers-box">
           {selectedTickets.length === 0 ? (
-            <span className="text-gray-500">Ninguno seleccionado</span>
+            <div className="selected-numbers-empty">
+              Ningún número seleccionado
+            </div>
           ) : (
             selectedTickets.map(ticket => (
-              <span key={ticket} className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+              <div key={ticket} className="selected-number-badge">
                 {ticket} 
                 <button 
-                  className="ml-1 text-xs text-gray-500 hover:text-red-500"
-                  onClick={() => removeFromSelection(ticket)}
+                  className="remove-number-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeFromSelection(ticket);
+                  }}
+                  aria-label="Eliminar"
                 >
                   ×
                 </button>
-              </span>
+              </div>
             ))
           )}
         </div>
       </div>
       
-      <button 
-        className={`bg-green-500 text-white px-4 py-2 rounded font-medium ${selectedTickets.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-        disabled={selectedTickets.length === 0}
-        onClick={() => onTicketSelect && onTicketSelect(selectedTickets)}
-      >
-        Continuar con la compra
-      </button>
+      <div className="selection-footer">
+        <div className="selection-info">
+          {selectedTickets.length > 0 ? 
+            `Has seleccionado ${selectedTickets.length} número${selectedTickets.length > 1 ? 's' : ''}` : 
+            'Selecciona al menos un número para continuar'
+          }
+        </div>
+        <button 
+          className="continue-button"
+          disabled={selectedTickets.length === 0}
+          onClick={() => onTicketSelect && onTicketSelect(selectedTickets)}
+        >
+          Continuar con la compra
+          <span className="continue-button-icon">▶</span>
+        </button>
+      </div>
     </div>
   );
 };

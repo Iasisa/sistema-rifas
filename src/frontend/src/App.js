@@ -69,52 +69,9 @@ function App() {
   return (
     <AuthProvider>
       <div className="App min-h-screen flex flex-col">
-        <Header />
+        <Header currentStep={currentStep} setCurrentStep={setCurrentStep} onReset={handleReset} />
         
-        <main className="container mx-auto p-4 flex-grow">
-          {/* Navegación simple */}
-          <div className="mb-6 bg-gray-100 p-3 rounded-lg">
-            <nav className="flex flex-wrap space-x-2">
-              <button 
-                className={`px-3 py-1 rounded ${currentStep === 'selection' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                onClick={() => setCurrentStep('selection')}
-              >
-                Selección de Boletos
-              </button>
-              <button 
-                className={`px-3 py-1 rounded ${currentStep === 'form' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                onClick={() => selectedTickets.length > 0 && setCurrentStep('form')}
-                disabled={selectedTickets.length === 0}
-              >
-                Formulario
-              </button>
-              <button 
-                className={`px-3 py-1 rounded ${currentStep === 'ticket' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                onClick={() => userData && setCurrentStep('ticket')}
-                disabled={!userData}
-              >
-                Boleto
-              </button>
-              <button 
-                className={`px-3 py-1 rounded ${currentStep === 'admin' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
-                onClick={() => setCurrentStep('admin')}
-              >
-                Administración
-              </button>
-              
-              {/* Botón para volver al inicio */}
-              {(currentStep === 'form' || currentStep === 'ticket') && (
-                <button 
-                  className="ml-auto px-3 py-1 rounded bg-red-500 text-white"
-                  onClick={handleReset}
-                >
-                  Cancelar y volver al inicio
-                </button>
-              )}
-            </nav>
-          </div>
-          
-          {/* Componente actual según el paso */}
+        <main className="app-main">
           {renderCurrentStep()}
         </main>
         

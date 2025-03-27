@@ -1,28 +1,83 @@
 // src/frontend/src/components/LoginForm.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import './LoginForm.css';
 
 const LoginForm = ({ onLoginSuccess }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [formError, setFormError] = useState('');
+  const [formData, setFormData] = useState({
+    username: '',
+    password: ''
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   
   const { login, loading, error } = useAuth();
+  
+  // Efecto para recuperar el nombre de usuario guardado
+  useEffect(() => {
+    const savedUsername = localStorage.getItem('rememberedUsername');
+    if (savedUsername) {
+      setFormData(prev => ({ ...prev, username: savedUsername }));
+      setRememberMe(true);
+    }
+  }, []);
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value
+    });
+    
+    // Limpiar errores al escribir
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: null
+      });
+    }
+  };
+  
+  const togglePasswordVisibility = () => {
+    setIsPasswordVisible(!isPasswordVisible);
+  };
+  
+  const handleRememberMeChange = () => {
+    setRememberMe(!rememberMe);
+  };
+  
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.username.trim()) {
+      errors.username = 'El nombre de usuario es obligatorio';
+    }
+    
+    if (!formData.password) {
+      errors.password = 'La contraseña es obligatoria';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validación básica
-    if (!username.trim() || !password.trim()) {
-      setFormError('Por favor, complete todos los campos');
+    if (!validateForm()) {
       return;
     }
     
-    // Resetear errores
-    setFormError('');
+    // Guardar o eliminar el nombre de usuario según la opción "Recordarme"
+    if (rememberMe) {
+      localStorage.setItem('rememberedUsername', formData.username);
+    } else {
+      localStorage.removeItem('rememberedUsername');
+    }
     
     // Intentar inicio de sesión
-    const success = await login(username, password);
+    const success = await login(formData.username, formData.password);
     
     if (success && onLoginSuccess) {
       onLoginSuccess();
@@ -30,60 +85,109 @@ const LoginForm = ({ onLoginSuccess }) => {
   };
   
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md max-w-md mx-auto">
-      <h2 className="text-xl font-semibold mb-6 text-center">Acceso Administrativo</h2>
-      
-      <form onSubmit={handleSubmit}>
-        {/* Mensaje de error */}
-        {(error || formError) && (
-          <div className="mb-4 p-3 bg-red-100 border-l-4 border-red-500 text-red-700">
-            <p>{formError || error}</p>
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-header">
+          <div className="login-logo">
+            <div className="logo-icon">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="white" strokeWidth="2" />
+                <path d="M12 6V12L16 14" stroke="white" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <h1 className="login-title">Sistema de Rifas</h1>
           </div>
-        )}
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="username">
-            Usuario
-          </label>
-          <input
-            id="username"
-            type="text"
-            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Nombre de usuario"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={loading}
-          />
+          <h2 className="login-subtitle">Acceso Administrativo</h2>
         </div>
         
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
-            Contraseña
-          </label>
-          <input
-            id="password"
-            type="password"
-            className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-          />
+        <div className="login-body">
+          {error && (
+            <div className="login-error">
+              <div className="error-icon">!</div>
+              <div className="error-message">{error}</div>
+            </div>
+          )}
+          
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="form-group">
+              <label htmlFor="username" className="form-label">Nombre de usuario</label>
+              <div className={`input-container ${formErrors.username ? 'has-error' : ''}`}>
+                <div className="input-icon username-icon"></div>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  placeholder="Ingresa tu nombre de usuario"
+                  disabled={loading}
+                  className="form-input"
+                />
+              </div>
+              {formErrors.username && <div className="error-text">{formErrors.username}</div>}
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="password" className="form-label">Contraseña</label>
+              <div className={`input-container ${formErrors.password ? 'has-error' : ''}`}>
+                <div className="input-icon password-icon"></div>
+                <input
+                  type={isPasswordVisible ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Ingresa tu contraseña"
+                  disabled={loading}
+                  className="form-input"
+                />
+                <button 
+                  type="button"
+                  className={`toggle-password ${isPasswordVisible ? 'visible' : ''}`}
+                  onClick={togglePasswordVisibility}
+                  tabIndex="-1"
+                  aria-label={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+                ></button>
+              </div>
+              {formErrors.password && <div className="error-text">{formErrors.password}</div>}
+            </div>
+            
+            <div className="form-options">
+              <div className="remember-me">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={handleRememberMeChange}
+                  className="remember-checkbox"
+                />
+                <label htmlFor="rememberMe" className="remember-label">Recordarme</label>
+              </div>
+              
+              <a href="#" className="forgot-password">¿Olvidaste tu contraseña?</a>
+            </div>
+            
+            <button
+              type="submit"
+              className={`login-button ${loading ? 'loading' : ''}`}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="button-spinner"></span>
+                  <span>Iniciando sesión...</span>
+                </>
+              ) : (
+                'Iniciar sesión'
+              )}
+            </button>
+          </form>
         </div>
         
-        <button
-          type="submit"
-          className={`w-full bg-blue-600 text-white p-2 rounded font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-            loading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          disabled={loading}
-        >
-          {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-        </button>
-      </form>
-      
-      <div className="mt-4 text-center text-sm text-gray-600">
-        <p>Este acceso es únicamente para administradores del sistema</p>
+        <div className="login-footer">
+          <p>Este acceso es exclusivo para administradores del sistema</p>
+          <p className="copyright">© {new Date().getFullYear()} Sistema de Rifas. Todos los derechos reservados.</p>
+        </div>
       </div>
     </div>
   );
