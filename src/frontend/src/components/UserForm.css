@@ -1,0 +1,298 @@
+/* src/frontend/src/components/UserForm.css */
+@import url('https://fonts.googleapis.com/css?family=Poppins:400,500,600,700&display=swap');
+
+.form-container {
+  max-width: 1000px;
+  background: #fff;
+  width: 100%;
+  padding: 30px 40px;
+  box-shadow: 0px 0px 15px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  font-family: 'Poppins', sans-serif;
+  margin: 0 auto 30px auto; /* Centrado horizontal */
+}
+
+.form-title {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  background: linear-gradient(to right, #4776E6, #8E54E9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.5px;
+}
+
+.tickets-summary {
+  background: #f7f9ff;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 1px solid #e0e6ff;
+}
+
+.tickets-summary h3 {
+  color: #4b6cb7;
+  font-size: 18px;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.selected-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.number-badge {
+  background: #4776E6;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 50px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  font-size: 16px;
+  box-shadow: 0 2px 5px rgba(71, 118, 230, 0.3);
+}
+
+.price-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px dashed #c5d1ff;
+  font-weight: 500;
+  color: #4b6cb7;
+}
+
+.price-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #4776E6;
+}
+
+.feedback-message {
+  padding: 15px;
+  border-radius: 6px;
+  margin-bottom: 25px;
+  position: relative;
+  font-size: 15px;
+}
+
+.feedback-message.error {
+  background-color: #ffebee;
+  color: #c62828;
+  border-left: 4px solid #c62828;
+}
+
+.feedback-message.success {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-left: 4px solid #2e7d32;
+}
+
+form {
+  padding: 0;
+}
+
+.form-row {
+  display: flex;
+  margin: 0 -20px 40px -20px;
+  width: 100%;
+}
+
+.input-data {
+  width: 100%;
+  height: 40px;
+  margin: 0 30px;
+  position: relative;
+}
+
+.input-data input {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  font-size: 16px;
+  border-bottom: 2px solid rgba(0,0,0, 0.12);
+  outline: none;
+  font-family: 'Poppins', sans-serif;
+  padding: 10px 0;
+}
+
+/* Estilo alternativo de campos más moderno */
+.modern-inputs .input-data {
+  height: auto;
+  margin-top: 15px;
+}
+
+.modern-inputs .input-data input {
+  background-color: #f9f9fd;
+  border: 1px solid #e0e6ff;
+  border-radius: 5px;
+  height: 50px;
+  padding: 10px 15px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.modern-inputs .input-data input:focus {
+  border-color: #4776E6;
+  box-shadow: 0 0 0 3px rgba(71, 118, 230, 0.15);
+}
+
+.input-data input:focus ~ label, 
+.input-data input:valid ~ label {
+  transform: translateY(-25px);
+  font-size: 13px;
+  color: #4776E6;
+}
+
+.input-data label {
+  position: absolute;
+  pointer-events: none;
+  bottom: 10px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  color: #757575;
+}
+
+.modern-inputs .input-data label {
+  position: static;
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+  color: #4b6cb7;
+  font-weight: 500;
+}
+
+.input-data .underline {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+}
+
+.input-data .underline:before {
+  position: absolute;
+  content: "";
+  height: 2px;
+  width: 100%;
+  background: #4776E6;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.3s ease;
+}
+
+.input-data input:focus ~ .underline:before,
+.input-data input:valid ~ .underline:before {
+  transform: scaleX(1);
+}
+
+.error-message {
+  font-size: 13px;
+  color: #c62828;
+  margin-top: 8px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+}
+
+.info-section {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 6px;
+  margin-bottom: 30px;
+}
+
+.info-section h4 {
+  font-size: 16px;
+  color: #4b6cb7;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.info-section ul {
+  padding-left: 20px;
+  margin: 0;
+}
+
+.info-section li {
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 14px;
+}
+
+.submit-btn {
+  margin-top: 30px;
+}
+
+.submit-btn .input-data {
+  overflow: hidden;
+  height: 60px !important;
+  width: 60% !important;
+  margin: 20px auto 0;
+  border-radius: 8px;
+  background: linear-gradient(to right, #4776E6, #8E54E9);
+  box-shadow: 0 4px 15px rgba(71, 118, 230, 0.4);
+  transition: all 0.3s ease;
+}
+
+.submit-btn .input-data:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(71, 118, 230, 0.5);
+}
+
+.submit-btn .input-data .inner {
+  height: 100%;
+  width: 300%;
+  position: absolute;
+  left: -100%;
+  background: linear-gradient(to right, #4776E6, #8E54E9, #4776E6, #8E54E9);
+  transition: all 0.4s;
+}
+
+.submit-btn .input-data:hover .inner {
+  left: 0;
+}
+
+.submit-btn .input-data input {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  text-transform: uppercase;
+  width: 100%;
+  height: 100%;
+}
+
+.submit-btn .input-data input:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .form-container {
+    padding: 25px 20px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    margin-bottom: 0;
+  }
+  
+  .input-data {
+    margin: 0 20px 40px 20px;
+  }
+  
+  .submit-btn .input-data {
+    width: 70% !important;
+  }
+}
